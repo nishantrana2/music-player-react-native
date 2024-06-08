@@ -9,7 +9,6 @@ import {
   FlatList,
   TextInput,
   StyleSheet,
-  Pressable,
 } from "react-native";
 import {
   widthPercentageToDP as wp,
@@ -54,8 +53,55 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
   useEffect(() => {
     if (screenType === "tracks") {
       setTracksState(storeData.state.tracks);
+    } else if (screenType === "favorites") {
+      setTracksState(storeData.state.tracks.filter((track) => track.favorite));
+    } else if (screenType === "playlists") {
+      const playlist = storeData.state.playlists.find(
+        (playlist) => playlist.name === playlistName
+      );
+      const updatedTracks = playlist.tracks.map((track) => {
+        const correspondingTrack = storeData.state.tracks.find(
+          (storeTrack) => storeTrack.id === track.id
+        );
+        if (correspondingTrack) {
+          return correspondingTrack;
+        }
+        return track;
+      });
+      setTracksState(updatedTracks);
     }
   }, []);
+
+  const searchLogic = (text) => {
+    text = text.toLowerCase();
+    var tracks = [];
+    if (screenType === "tracks") tracks = storeData.state.tracks;
+    else if (screenType === "favorites")
+      tracks = storeData.state.tracks.filter((track) => track.favorite);
+    else if (screenType === "playlists") {
+      const playlist = storeData.state.playlists.find(
+        (playlist) => playlist.name === playlistName
+      );
+      const updatedTracks = playlist.tracks.map((track) => {
+        const correspondingTrack = storeData.state.tracks.find(
+          (storeTrack) => storeTrack.id === track.id
+        );
+        if (correspondingTrack) {
+          return correspondingTrack;
+        }
+        return track;
+      });
+      tracks = updatedTracks;
+    }
+    if (text === "") {
+      setTracksState(tracks);
+    } else {
+      let filteredTracks = tracks.filter((track) =>
+        track.name.toLowerCase().includes(text)
+      );
+      setTracksState(filteredTracks);
+    }
+  };
 
   const renderItem = ({ item }) => {
     const isSelected = item.id === selectedItemId;
@@ -66,7 +112,7 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
       }
     };
     return (
-      <Pressable onPress={() => handleSelectedItem()}>
+      <TouchableWithoutFeedback onPress={() => handleSelectedItem()}>
         <View style={styles.box}>
           <Image source={item.icon} style={styles.icon} />
           <View>
@@ -76,8 +122,9 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
               <TouchableOpacity activeOpacity={0.7}>
                 <View style={styles.createPlaylistButton}>
                   <Text style={styles.createPlaylistButtonText}>
-                    {" "}
-                    Add to playlist{" "}
+                    {screenType === "playlists"
+                      ? "Remove from playlist"
+                      : "Add to playlist"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -101,7 +148,7 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
             </View>
           </View>
         </View>
-      </Pressable>
+      </TouchableWithoutFeedback>
     );
   };
 
@@ -113,6 +160,30 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
     );
   };
 
+  if (tracksState.length === 0 && screenType === "favorites") {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { alignItems: "center", justifyContent: "center" },
+        ]}
+      >
+        <Text style={styles.emptyText}> No tracks marked as favorite! </Text>
+      </SafeAreaView>
+    );
+  } else if (tracksState.length === 0 && screenType === "playlists") {
+    return (
+      <SafeAreaView
+        style={[
+          styles.container,
+          { alignItems: "center", justifyContent: "center" },
+        ]}
+      >
+        <Text style={styles.emptyText}> No tracks in this playlist! </Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.view1}>
@@ -121,6 +192,7 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
           keyboardType="default"
           placeholder="Search tracks"
           placeholderTextColor="black"
+          onChangeText={(text) => searchLogic(text)}
         />
       </View>
       <View style={styles.view2}>
