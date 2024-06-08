@@ -23,7 +23,7 @@ const LandingScreen = ({ navigation }) => {
           <Pressable
             style={({ pressed }) => [
               {
-                opacity: pressed ? 0.2 : 1,
+                opacity: pressed ? 0.8 : 1,
               },
             ]}
             onPress={() => navigation.navigate("tracks")}
@@ -35,7 +35,7 @@ const LandingScreen = ({ navigation }) => {
           <Pressable
             style={({ pressed }) => [
               {
-                opacity: pressed ? 0.2 : 1,
+                opacity: pressed ? 0.8 : 1,
               },
             ]}
             onPress={() => navigation.navigate("favorites")}
@@ -47,7 +47,7 @@ const LandingScreen = ({ navigation }) => {
           <Pressable
             style={({ pressed }) => [
               {
-                opacity: pressed ? 0.2 : 1,
+                opacity: pressed ? 0.8 : 1,
               },
             ]}
             onPress={() => navigation.navigate("playlists")}
