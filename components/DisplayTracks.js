@@ -103,6 +103,114 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
     }
   };
 
+  const play = async (item) => {
+    const track = new Audio.Sound();
+    await track.loadAsync(item.path, {
+      onError: (error) => {
+        window.alert("Error loading track!");
+        return;
+      },
+    });
+    const status = await track.getStatusAsync();
+    const durationSeconds = Math.floor(status.durationMillis / 1000);
+    const minutes = Math.floor(durationSeconds / 60);
+    const seconds = durationSeconds % 60;
+    setDuration({ minutes: minutes, seconds: seconds });
+    setProgress(0);
+    await track.playAsync({
+      onError: (error) => {
+        window.alert("Error playing track!");
+        return;
+      },
+    });
+    setIsPlaying(true);
+    setCurrentTrack(track);
+    try {
+      track.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.isPlaying) {
+          const durationSecondsLeft = Math.floor(
+            (status.durationMillis - status.positionMillis) / 1000
+          );
+          const minutesLeft = Math.floor(durationSecondsLeft / 60);
+          const secondsLeft = durationSecondsLeft % 60;
+          setDuration({ minutes: minutesLeft, seconds: secondsLeft });
+          const trackDurationSeconds = Math.floor(status.durationMillis / 1000);
+          const trackPositionSeconds = Math.floor(status.positionMillis / 1000);
+          const trackProgress = trackPositionSeconds / trackDurationSeconds;
+          setProgress(trackProgress);
+        }
+        if (status.didJustFinish) {
+          await track.unloadAsync();
+          setIsPlaying(false);
+          setSelectedItemId(null);
+          setCurrentTrack(null);
+          setProgress(0);
+          setDuration(null);
+          setNowPlaying("");
+        }
+      });
+    } catch (error) {
+      window.alert("Error while playing track!");
+      await track.unloadAsync();
+      setIsPlaying(false);
+      setSelectedItemId(null);
+      setCurrentTrack(null);
+      setProgress(0);
+      setDuration(null);
+      setNowPlaying("");
+      return;
+    }
+  };
+
+  const pause = async () => {
+    try {
+      const playbackStatus = await currentTrack.getStatusAsync();
+      if (playbackStatus.isLoaded) {
+        await currentTrack.pauseAsync();
+      }
+      setIsPlaying(false);
+    } catch (err) {
+      window.alert("Error pausing track!");
+      return;
+    }
+  };
+
+  const resume = async () => {
+    if (currentTrack === null) {
+      window.alert("Please select a track to play!");
+      return;
+    }
+    try {
+      const playbackStatus = await currentTrack.getStatusAsync();
+      if (playbackStatus.isLoaded) {
+        await currentTrack.playAsync();
+      }
+      setIsPlaying(true);
+    } catch (err) {
+      window.alert("Error resuming track!");
+      return;
+    }
+  };
+
+  const handlePlayTrack = async (item) => {
+    try {
+      if (currentTrack === null) {
+        play(item);
+      } else {
+        if (item.id === selectedItemId) {
+          if (isPlaying) pause();
+          else resume();
+        } else {
+          await currentTrack.unloadAsync();
+          setCurrentTrack(null);
+          play(item);
+        }
+      }
+    } catch (error) {
+      window.alert("Some error occured. Please try again later!");
+    }
+  };
+
   const renderItem = ({ item }) => {
     const isSelected = item.id === selectedItemId;
     const handleSelectedItem = () => {
@@ -110,6 +218,7 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
         setSelectedItemId(item.id);
         setNowPlaying("Now playing: " + item.name + " by " + item.performer);
       }
+      handlePlayTrack(item);
     };
     return (
       <TouchableWithoutFeedback onPress={() => handleSelectedItem()}>
@@ -154,9 +263,19 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
 
   const renderPlayPause = () => {
     return isPlaying ? (
-      <AntDesign name="pause" size={wp(10)} style={styles.playPause} />
+      <AntDesign
+        name="pause"
+        onPress={() => pause()}
+        size={wp(10)}
+        style={styles.playPause}
+      />
     ) : (
-      <Entypo name="controller-play" size={wp(10)} style={styles.playPause} />
+      <Entypo
+        name="controller-play"
+        onPress={() => resume()}
+        size={wp(10)}
+        style={styles.playPause}
+      />
     );
   };
 
@@ -218,6 +337,14 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
           <AntDesign name="banckward" size={wp(7)} style={styles.backward} />
           {renderPlayPause()}
           <AntDesign name="forward" size={wp(7)} style={styles.forward} />
+          {duration !== null &&
+            !isNaN(duration.minutes) &&
+            !isNaN(duration.seconds) && (
+              <Text style={styles.duration}>
+                {duration.minutes.toString().padStart(2, "0")} :{" "}
+                {duration.seconds.toString().padStart(2, "0")}
+              </Text>
+            )}
         </View>
       </View>
     </SafeAreaView>
