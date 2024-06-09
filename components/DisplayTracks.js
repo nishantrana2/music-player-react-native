@@ -211,6 +211,69 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
     }
   };
 
+  const handleForwardBackward = (type) => {
+    if (currentTrack === null) {
+      window.alert("Please select a track to play!");
+      return;
+    }
+    const currentTrackIndex = tracksState.findIndex(
+      (track) => track.id === selectedItemId
+    );
+    let updatedTrackIndex;
+    if (type == "forward")
+      updatedTrackIndex = (currentTrackIndex + 1) % tracksState.length;
+    else
+      updatedTrackIndex =
+        (currentTrackIndex - 1 + tracksState.length) % tracksState.length;
+    setSelectedItemId(tracksState[updatedTrackIndex].id);
+    setNowPlaying(
+      "Now playing: " +
+        tracksState[updatedTrackIndex].name +
+        " by " +
+        tracksState[updatedTrackIndex].performer
+    );
+    handlePlayTrack(tracksState[updatedTrackIndex]);
+  };
+
+  const handleFavorite = async (item) => {
+    await storeData.dispatchFunction({
+      type: "HANDLE_FAVORITE",
+      payload: {
+        data: item,
+      },
+    });
+    if (screenType === "favorites") {
+      setTracksState((prevTracksState) =>
+        prevTracksState
+          .map((track) =>
+            track.id === item.id
+              ? { ...track, favorite: !track.favorite }
+              : track
+          )
+          .filter((track) => track.favorite)
+      );
+
+      if (!item.favorite === false) {
+        await currentTrack.unloadAsync();
+        setDuration(null);
+        setIsPlaying(false);
+        setSelectedItemId(null);
+        setCurrentTrack(null);
+        setProgress(0);
+        setNowPlaying("");
+      }
+    } else {
+      console.log(tracksState, "first");
+      setTracksState((prevTracksState) =>
+        prevTracksState.map((track) =>
+          track.id === item.id ? { ...track, favorite: !track.favorite } : track
+        )
+      );
+    }
+  };
+
+  console.log(tracksState, "after all");
+
   const renderItem = ({ item }) => {
     const isSelected = item.id === selectedItemId;
     const handleSelectedItem = () => {
@@ -241,11 +304,17 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
                 <AntDesign
                   name="heart"
                   color="red"
+                  onPress={() => handleFavorite(item)}
                   size={wp(10)}
                   style={styles.heart}
                 />
               ) : (
-                <AntDesign name="hearto" size={wp(10)} style={styles.heart} />
+                <AntDesign
+                  name="hearto"
+                  onPress={() => handleFavorite(item)}
+                  size={wp(10)}
+                  style={styles.heart}
+                />
               )}
               {isSelected ? (
                 <MaterialCommunityIcons
@@ -334,9 +403,19 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
           style={styles.bar}
         />
         <View style={styles.controlsWrapper}>
-          <AntDesign name="banckward" size={wp(7)} style={styles.backward} />
+          <AntDesign
+            name="banckward"
+            onPress={() => handleForwardBackward("backward")}
+            size={wp(7)}
+            style={styles.backward}
+          />
           {renderPlayPause()}
-          <AntDesign name="forward" size={wp(7)} style={styles.forward} />
+          <AntDesign
+            name="forward"
+            onPress={() => handleForwardBackward("forward")}
+            size={wp(7)}
+            style={styles.forward}
+          />
           {duration !== null &&
             !isNaN(duration.minutes) &&
             !isNaN(duration.seconds) && (

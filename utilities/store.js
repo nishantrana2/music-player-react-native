@@ -17,7 +17,20 @@ const musicReducer = (state, action) => {
   const { type, payload } = action;
   switch (type) {
     case "HANDLE_FAVORITE":
-    // Handle favorites here, i.e., adding and removing music tracks from favorites
+      const updatedTracks = state.tracks.map((track) => {
+        if (track.id === payload.data.id) {
+          return {
+            ...track,
+            favorite: !track.favorite,
+          };
+        } else {
+          return track;
+        }
+      });
+      return {
+        ...state,
+        tracks: updatedTracks,
+      };
     case "CREATE_PLAYLIST":
     // Create playlists here
     case "DELETE_PLAYLIST":
