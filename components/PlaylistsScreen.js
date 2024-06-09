@@ -32,8 +32,62 @@ const PlaylistsScreen = ({ route, navigation }) => {
   }, [storeData.state.playlists]);
 
   const playlistHandler = async (item) => {
-    navigation.navigate("playlistshelper", {
-      playlistName: item.name,
+    if (route.params) {
+      let trackToAdd = route.params.track;
+      const trackExists = playlists.some(
+        (playlist) =>
+          playlist.name === item.name &&
+          playlist.tracks.some((track) => track.id === trackToAdd.id)
+      );
+      if (trackExists)
+        window.alert("This track already exists in the playlist " + item.name);
+      else {
+        await storeData.dispatchFunction({
+          type: "ADD_TRACK_TO_PLAYLIST",
+          payload: {
+            data: { playlistName: item.name, track: trackToAdd },
+          },
+        });
+        window.alert("Track successfully added to playlist " + item.name);
+        navigation.navigate(route.params.screen);
+      }
+    } else {
+      navigation.navigate("playlistshelper", {
+        playlistName: item.name,
+      });
+    }
+  };
+
+  const createPlaylist = async () => {
+    if (inputValue === "") window.alert("Please enter a playlist name!");
+    else {
+      let cleanedValue = inputValue.toLowerCase().trim();
+      const playlistExists = playlists.some(
+        (playlist) => playlist.name === inputValue
+      );
+      if (playlistExists) {
+        window.alert(
+          "Playlist with the name " + inputValue + " already exists!"
+        );
+      } else {
+        await storeData.dispatchFunction({
+          type: "CREATE_PLAYLIST",
+          payload: {
+            data: { name: cleanedValue, tracks: [] },
+          },
+        });
+        setInputValue("");
+        setModalVisible(false);
+      }
+    }
+  };
+
+  const deletePlaylist = async (playlistName) => {
+    await storeData.dispatchFunction({
+      type: "DELETE_PLAYLIST",
+      payload: {
+        data: playlistName,
+      },
     });
   };
 
@@ -68,7 +122,10 @@ const PlaylistsScreen = ({ route, navigation }) => {
                 <Text style={styles.createPlaylistButtonText}> Cancel </Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity activeOpacity={0.7}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => createPlaylist()}
+            >
               <View
                 style={[
                   styles.createPlaylistButton,
@@ -95,7 +152,11 @@ const PlaylistsScreen = ({ route, navigation }) => {
       >
         <View style={styles.playlistButton}>
           <Text style={styles.playlistButtonText}> {item.name} </Text>
-          <Entypo name="cross" size={wp(9)} />
+          <Entypo
+            name="cross"
+            onPress={() => deletePlaylist(item.name)}
+            size={wp(9)}
+          />
         </View>
       </TouchableOpacity>
     );

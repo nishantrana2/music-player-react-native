@@ -252,7 +252,6 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
           )
           .filter((track) => track.favorite)
       );
-
       if (!item.favorite === false) {
         await currentTrack.unloadAsync();
         setDuration(null);
@@ -263,7 +262,6 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
         setNowPlaying("");
       }
     } else {
-      console.log(tracksState, "first");
       setTracksState((prevTracksState) =>
         prevTracksState.map((track) =>
           track.id === item.id ? { ...track, favorite: !track.favorite } : track
@@ -272,7 +270,34 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
     }
   };
 
-  console.log(tracksState, "after all");
+  const addRemovePlaylistHandler = async (item) => {
+    if (screenType === "tracks" || screenType === "favorites") {
+      navigation.navigate("playlists", {
+        track: item,
+        screen: screenType,
+      });
+    } else if (screenType === "playlists") {
+      await storeData.dispatchFunction({
+        type: "DELETE_TRACK_FROM_PLAYLIST",
+        payload: {
+          data: { playlistName: playlistName, track: item },
+        },
+      });
+      const updatedTracksState = tracksState.filter(
+        (track) => track.id !== item.id
+      );
+      setTracksState(updatedTracksState);
+      if (item.id === selectedItemId && currentTrack !== null) {
+        await currentTrack.unloadAsync();
+        setDuration(null);
+        setIsPlaying(false);
+        setSelectedItemId(null);
+        setCurrentTrack(null);
+        setProgress(0);
+        setNowPlaying("");
+      }
+    }
+  };
 
   const renderItem = ({ item }) => {
     const isSelected = item.id === selectedItemId;
@@ -291,7 +316,10 @@ const DisplayTracks = ({ navigation, screenType, playlistName }) => {
             <Text style={styles.trackName}> {item.name} </Text>
             <Text style={styles.trackPerformer}> By {item.performer} </Text>
             <View style={{ flexDirection: "row" }}>
-              <TouchableOpacity activeOpacity={0.7}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => addRemovePlaylistHandler(item)}
+              >
                 <View style={styles.createPlaylistButton}>
                   <Text style={styles.createPlaylistButtonText}>
                     {screenType === "playlists"

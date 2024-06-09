@@ -32,13 +32,46 @@ const musicReducer = (state, action) => {
         tracks: updatedTracks,
       };
     case "CREATE_PLAYLIST":
-    // Create playlists here
+      return {
+        ...state,
+        playlists: [...state.playlists, payload.data],
+      };
     case "DELETE_PLAYLIST":
-    // Delete playlists here
+      return {
+        ...state,
+        playlists: state.playlists.filter(
+          (playlist) => playlist.name !== payload.data
+        ),
+      };
     case "ADD_TRACK_TO_PLAYLIST":
-    // Add individual music track to a particular playlist here
+      return {
+        ...state,
+        playlists: state.playlists.map((playlist) => {
+          if (playlist.name === payload.data.playlistName) {
+            return {
+              ...playlist,
+              tracks: [...playlist.tracks, payload.data.track],
+            };
+          }
+          return playlist;
+        }),
+      };
     case "DELETE_TRACK_FROM_PLAYLIST":
-    // Delete individual music track from a particular playlist here
+      return {
+        ...state,
+        playlists: state.playlists.map((playlist) => {
+          if (playlist.name === payload.data.playlistName) {
+            const updatedTracks = playlist.tracks.filter(
+              (track) => track.id !== payload.data.track.id
+            );
+            return {
+              ...playlist,
+              tracks: updatedTracks,
+            };
+          }
+          return playlist;
+        }),
+      };
     default:
       window.alert("Error! Something went wrong.");
   }

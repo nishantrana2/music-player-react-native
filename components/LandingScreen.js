@@ -96,7 +96,6 @@ const styles = StyleSheet.create({
     borderRadius: wp(6),
     borderColor: "#3d54dc",
     backgroundColor: "#3d54dc",
-    // borderWidth: wp(3),
     alignItems: "center",
     justifyContent: "center",
     margin: wp(3),
