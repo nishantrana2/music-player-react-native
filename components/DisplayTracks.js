@@ -523,7 +523,6 @@ const styles = StyleSheet.create({
     borderRadius: wp(5),
     borderColor: "#3d54dc",
     backgroundColor: "#3d54dc",
-    borderWidth: wp(1),
     alignItems: "center",
     justifyContent: "center",
     marginTop: wp(3),
